@@ -1,2 +1,4 @@
-# CS442-TermProject
-Final Project for CS442
+# CS442-FinalProject
+## Brad and Kevin
+
+Start a local server with `python -m http.server` within this directory

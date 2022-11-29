@@ -307,15 +307,23 @@ class NormalMesh {
     static marchingCubes( gl, program, subdivs, thresh, material ) {
 
         function inside(x, y, z) {
-            //let val = y;
-            let val = x*x + y*y + z*z;
-            // Math.sin(x*y + x*z + y*z) + Math.sin(x*y) + Math.sin(y*z) + Math.sin(x*z) - 1;
+            let val = y;
+            //let val = x + y + z;
+            //let val = x*x + y*y + z*z;
+            //let val = Math.sin(x*y + x*z + y*z) + Math.sin(x*y) + Math.sin(y*z) + Math.sin(x*z) - 1;
             //console.log(val);
             if (val <= thresh) {
                 return 1;
             } else {
                 return 0;
             }
+        }
+
+        function normalVec(x, y, z) {
+            let ba = new Vec4(-x, y, 0.0, 1.0);
+            let ca = new Vec4(-x, 0.0, z, 1.0);
+            return ba.cross(ca).norm();
+
         }
 
         let verts = [];
@@ -621,45 +629,50 @@ class NormalMesh {
         ];
 
         let pointTable = [
-            [1.0, 0.0, 1.0],
-            [0.0, 1.0, 1.0],
-            [-1.0, 0.0, 1.0],
-            [0.0, -1.0, 1.0],
-            [0.0, -1.0, -1.0],
-            [1.0, 0.0, -1.0],
-            [0.0, 1.0, -1.0],
-            [-1.0, 0.0, -1.0],
-            [-1.0, -1.0, 0.0],
-            [1.0, -1.0, 0.0],
-            [1.0, 1.0, 0.0],
-            [-1.0, 1.0, 0.0]
+            new Vec4(1.0, 0.0, 1.0, 1.0),
+            new Vec4(0.0, 1.0, 1.0, 1.0),
+            new Vec4(-1.0, 0.0, 1.0, 1.0),
+            new Vec4(0.0, -1.0, 1.0, 1.0),
+            new Vec4(0.0, -1.0, -1.0, 1.0),
+            new Vec4(1.0, 0.0, -1.0, 1.0),
+            new Vec4(0.0, 1.0, -1.0, 1.0),
+            new Vec4(-1.0, 0.0, -1.0, 1.0),
+            new Vec4(-1.0, -1.0, 0.0, 1.0),
+            new Vec4(1.0, -1.0, 0.0, 1.0),
+            new Vec4(1.0, 1.0, 0.0, 1.0),
+            new Vec4(-1.0, 1.0, 0.0, 1.0)
         ];
 
         let index = 0;
+        let vertSize, norm, x, y, z;
+        
         for (let i = 0; i < subdivs*subdivs*subdivs; i++) {
             for (let j = 0; j < 8; j++) {
-                index += Math.pow(2, j) * cellData[i][j];
+                index += Math.pow(2, j) * cellData[i][7-j];
             }
 
             //console.log(cellData[i]);
-            //console.log(TriangleTable[index]);
+            //console.log(index);
             for (let j = 0; j < (TriangleTable[index].length-1)/3; j++) {
-
+                vertSize = verts.length/(VERTEX_STRIDE/4);
 
                 for (let k = 0; k < 3; k++) {
+                    x = pointTable[TriangleTable[index][3*j+k]].x;
+                    y = pointTable[TriangleTable[index][3*j+k]].y;
+                    z = pointTable[TriangleTable[index][3*j+k]].z;
+
                     // coords
-                    verts.push(pointTable[TriangleTable[index][3*j+k]][0],
-                        pointTable[TriangleTable[index][3*j+k]][1],
-                        pointTable[TriangleTable[index][3*j+k]][2]);
+                    verts.push(x, y, z);
                     // colors
-                    verts.push(1.0, 1.0, 1.0, 1.0);
+                    verts.push(0.2, 1.0, 0.2, 1.0);
                     // uvs
                     verts.push(0.0, 0.0);
                     // norms
-                    verts.push(1.0, 0.0, 0.0);
+                    norm = normalVec(x, y, z);
+                    verts.push(norm.x, norm.y, norm.z);
                 }
 
-                indis.push(TriangleTable[index][3*j], TriangleTable[index][3*j+1], TriangleTable[index][3*j+2]);
+                indis.push(vertSize, vertSize+1, vertSize+2);
             }
             index = 0;
         }

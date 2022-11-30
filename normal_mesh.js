@@ -307,9 +307,9 @@ class NormalMesh {
     static marchingCubes( gl, program, subdivs, thresh, material ) {
 
         function inside(x, y, z) {
-            let val = y;
-            //let val = x + y + z;
-            //let val = x*x + y*y + z*z;
+            //let val = y;
+            let val = x + y + z;
+            //let val = (x-1)*(x-1) + (y-1)*(y-1) + (z-1)*(z-1);
             //let val = Math.sin(x*y + x*z + y*z) + Math.sin(x*y) + Math.sin(y*z) + Math.sin(x*z) - 1;
             //console.log(val);
             if (val <= thresh) {
@@ -329,33 +329,20 @@ class NormalMesh {
         let verts = [];
         let indis = [];
 
-        /*
-        let noiseData = [];
-        for (let x = 0; x <= subdivs; x++) {
-            for (let y = 0; y <= subdivs; y++) {
-                for (let z = 0; z <= subdivs; z++) {
-                    if(noise(x, y, z) <= thresh) {
-                        noiseData.push(1);
-                    } else {
-                        noiseData.push(0);
-                    }
-                }
-            }
-        }*/
-
         let cellData = [];
         let dx0, dx1, dy0, dy1, dz0, dz1;
 
         for (let x = 0; x < subdivs; x++) {
-            dx0 = x/(subdivs-1);
-            dx1 = (x+1)/(subdivs-1);
+            dx0 = x/(subdivs);
+            dx1 = (x+1)/(subdivs);
             for (let y = 0; y < subdivs; y++) {
-                dy0 = y/(subdivs-1);
-                dy1 = (y+1)/(subdivs-1);
+                dy0 = y/(subdivs);
+                dy1 = (y+1)/(subdivs);
                 for (let z = 0; z < subdivs; z++) {
-                    dz0 = z/(subdivs-1);
-                    dz1 = (z+1)/(subdivs-1);
+                    dz0 = z/(subdivs);
+                    dz1 = (z+1)/(subdivs);
 
+                    // might be better to calculate the triangle index here instead
                     cellData.push([inside(dx0, dy0, dz0), inside(dx0, dy0, dz1),
                     inside(dx0, dy1, dz0), inside(dx0, dy1, dz1),
                     inside(dx1, dy0, dz0), inside(dx1, dy0, dz1),
@@ -366,7 +353,7 @@ class NormalMesh {
             }
         }
 
-        console.log(cellData);
+        //console.log(cellData);
 
         // from https://gist.github.com/dwilliamson/72c60fcd287a94867b4334b42a7888ad
         const TriangleTable = [
@@ -628,53 +615,69 @@ class NormalMesh {
         	[ -1 ],
         ];
 
+//        +-----6-------+
+//      / |            /|
+//  11   7         10   5
+//  +-----+2------+     |
+//  |     +-----4-+-----+
+//  3   8         1   9
+//  | /           | /
+//  +------0------+
+
         let pointTable = [
-            new Vec4(1.0, 0.0, 1.0, 1.0),
-            new Vec4(0.0, 1.0, 1.0, 1.0),
-            new Vec4(-1.0, 0.0, 1.0, 1.0),
-            new Vec4(0.0, -1.0, 1.0, 1.0),
-            new Vec4(0.0, -1.0, -1.0, 1.0),
-            new Vec4(1.0, 0.0, -1.0, 1.0),
-            new Vec4(0.0, 1.0, -1.0, 1.0),
-            new Vec4(-1.0, 0.0, -1.0, 1.0),
-            new Vec4(-1.0, -1.0, 0.0, 1.0),
-            new Vec4(1.0, -1.0, 0.0, 1.0),
-            new Vec4(1.0, 1.0, 0.0, 1.0),
-            new Vec4(-1.0, 1.0, 0.0, 1.0)
+            new Vec4(0.0, -1.0, 1.0, 1.0), // 0
+            new Vec4(1.0, 0.0, 1.0, 1.0), // 1
+            new Vec4(0.0, 1.0, 1.0, 1.0), // 2
+            new Vec4(-1.0, 0.0, 1.0, 1.0), // 3
+            new Vec4(0.0, -1.0, -1.0, 1.0), // 4
+            new Vec4(1.0, 0.0, -1.0, 1.0), // 5
+            new Vec4(0.0, 1.0, -1.0, 1.0), // 6
+            new Vec4(-1.0, 0.0, -1.0, 1.0), // 7
+            new Vec4(-1.0, -1.0, 0.0, 1.0), // 8
+            new Vec4(1.0, -1.0, 0.0, 1.0), // 9
+            new Vec4(1.0, 1.0, 0.0, 1.0), // 10
+            new Vec4(-1.0, 1.0, 0.0, 1.0) // 11
         ];
 
         let index = 0;
-        let vertSize, norm, x, y, z;
-        
-        for (let i = 0; i < subdivs*subdivs*subdivs; i++) {
-            for (let j = 0; j < 8; j++) {
-                index += Math.pow(2, j) * cellData[i][7-j];
-            }
+        let vertSize, norm, px, py, pz, cx, cy, i;
 
-            //console.log(cellData[i]);
-            //console.log(index);
-            for (let j = 0; j < (TriangleTable[index].length-1)/3; j++) {
-                vertSize = verts.length/(VERTEX_STRIDE/4);
+        for (let x = 0; x < subdivs; x++) {
+            cx = x * subdivs * subdivs;
+            for (let y = 0; y < subdivs; y++) {
+                cy = y * subdivs;
+                for (let z = 0; z < subdivs; z++) {
+                    i = cx + cy + z;
+                    for (let j = 0; j < 8; j++) {
+                        index += Math.pow(2, j) * cellData[i][7-j];
+                    }
 
-                for (let k = 0; k < 3; k++) {
-                    x = pointTable[TriangleTable[index][3*j+k]].x;
-                    y = pointTable[TriangleTable[index][3*j+k]].y;
-                    z = pointTable[TriangleTable[index][3*j+k]].z;
+                    console.log(cellData[i]);
+                    console.log(TriangleTable[index]);
+                    for (let j = 0; j < (TriangleTable[index].length-1)/3; j++) {
+                        vertSize = verts.length/(VERTEX_STRIDE/4);
 
-                    // coords
-                    verts.push(x, y, z);
-                    // colors
-                    verts.push(0.2, 1.0, 0.2, 1.0);
-                    // uvs
-                    verts.push(0.0, 0.0);
-                    // norms
-                    norm = normalVec(x, y, z);
-                    verts.push(norm.x, norm.y, norm.z);
+                        for (let k = 0; k < 3; k++) {
+                            px = pointTable[TriangleTable[index][3*j+k]].x + 2*x;
+                            py = pointTable[TriangleTable[index][3*j+k]].y + 2*y;
+                            pz = pointTable[TriangleTable[index][3*j+k]].z + 2*z;
+
+                            // coords
+                            verts.push(px, py, pz);
+                            // colors
+                            verts.push(0.2, 1.0, 0.2, 1.0);
+                            // uvs
+                            verts.push(0.0, 0.0);
+                            // norms
+                            norm = normalVec(px, py, pz);
+                            verts.push(norm.x, norm.y, norm.z);
+                        }
+
+                        indis.push(vertSize, vertSize+1, vertSize+2);
+                    }
+                    index = 0;
                 }
-
-                indis.push(vertSize, vertSize+1, vertSize+2);
             }
-            index = 0;
         }
 
         console.log(verts);

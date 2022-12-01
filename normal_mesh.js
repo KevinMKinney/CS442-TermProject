@@ -308,9 +308,10 @@ class NormalMesh {
 
         function inside(x, y, z) {
             //let val = y;
-            let val = x + y + z;
+            //let val = x + y + z;
             //let val = (x-1)*(x-1) + (y-1)*(y-1) + (z-1)*(z-1);
             //let val = Math.sin(x*y + x*z + y*z) + Math.sin(x*y) + Math.sin(y*z) + Math.sin(x*z) - 1;
+            let val = noise3d(x, y, z);
             //console.log(val);
             if (val <= thresh) {
                 return 1;
@@ -624,19 +625,21 @@ class NormalMesh {
 //  | /           | /
 //  +------0------+
 
+        let dist = 1.0/subdivs;
+
         let pointTable = [
-            new Vec4(0.0, -1.0, 1.0, 1.0), // 0
-            new Vec4(1.0, 0.0, 1.0, 1.0), // 1
-            new Vec4(0.0, 1.0, 1.0, 1.0), // 2
-            new Vec4(-1.0, 0.0, 1.0, 1.0), // 3
-            new Vec4(0.0, -1.0, -1.0, 1.0), // 4
-            new Vec4(1.0, 0.0, -1.0, 1.0), // 5
-            new Vec4(0.0, 1.0, -1.0, 1.0), // 6
-            new Vec4(-1.0, 0.0, -1.0, 1.0), // 7
-            new Vec4(-1.0, -1.0, 0.0, 1.0), // 8
-            new Vec4(1.0, -1.0, 0.0, 1.0), // 9
-            new Vec4(1.0, 1.0, 0.0, 1.0), // 10
-            new Vec4(-1.0, 1.0, 0.0, 1.0) // 11
+            new Vec4(dist, dist, 0.0, 1.0),
+            new Vec4(dist, 0.0, -dist, 1.0),
+            new Vec4(dist, -dist, 0.0, 1.0),
+            new Vec4(dist, 0.0, dist, 1.0),
+            new Vec4(-dist, dist, 0.0, 1.0),
+            new Vec4(-dist, 0.0, -dist, 1.0),
+            new Vec4(-dist, -dist, 0.0, 1.0),
+            new Vec4(-dist, 0.0, dist, 1.0),
+            new Vec4(0.0, dist, dist, 1.0),
+            new Vec4(0.0, dist, -dist, 1.0),
+            new Vec4(0.0, -dist, -dist, 1.0),
+            new Vec4(0.0, -dist, dist, 1.0)
         ];
 
         let index = 0;
@@ -644,23 +647,28 @@ class NormalMesh {
 
         for (let x = 0; x < subdivs; x++) {
             cx = x * subdivs * subdivs;
+            dx0 = x/(subdivs);
             for (let y = 0; y < subdivs; y++) {
                 cy = y * subdivs;
+                dy0 = y/(subdivs);
                 for (let z = 0; z < subdivs; z++) {
                     i = cx + cy + z;
+                    dz0 = z/(subdivs);
+
+                    // prob could use bit-wise operations
                     for (let j = 0; j < 8; j++) {
                         index += Math.pow(2, j) * cellData[i][7-j];
                     }
 
-                    console.log(cellData[i]);
-                    console.log(TriangleTable[index]);
+                    //console.log(cellData[i]);
+                    //console.log(TriangleTable[index]);
                     for (let j = 0; j < (TriangleTable[index].length-1)/3; j++) {
                         vertSize = verts.length/(VERTEX_STRIDE/4);
 
                         for (let k = 0; k < 3; k++) {
-                            px = pointTable[TriangleTable[index][3*j+k]].x + 2*x;
-                            py = pointTable[TriangleTable[index][3*j+k]].y + 2*y;
-                            pz = pointTable[TriangleTable[index][3*j+k]].z + 2*z;
+                            px = pointTable[TriangleTable[index][3*j+k]].x + 2*dx0;
+                            py = pointTable[TriangleTable[index][3*j+k]].y + 2*dy0;
+                            pz = pointTable[TriangleTable[index][3*j+k]].z + 2*dz0;
 
                             // coords
                             verts.push(px, py, pz);
@@ -680,8 +688,8 @@ class NormalMesh {
             }
         }
 
-        console.log(verts);
-        console.log(indis);
+        //console.log(verts);
+        //console.log(indis);
 
         return new NormalMesh( gl, program, verts, indis, material, true );
 

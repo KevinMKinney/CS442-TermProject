@@ -304,14 +304,14 @@ class NormalMesh {
         return new NormalMesh( gl, program, verts, indis, material, false );
     }
 
-    static marchingCubes( gl, program, subdivs, thresh, material ) {
+    static marchingCubes( gl, program, subdivs, thresh, octaves, material ) {
 
         function inside(x, y, z) {
             //let val = y;
             //let val = x + y + z;
             //let val = (x-1)*(x-1) + (y-1)*(y-1) + (z-1)*(z-1);
             //let val = Math.sin(x*y + x*z + y*z) + Math.sin(x*y) + Math.sin(y*z) + Math.sin(x*z) - 1;
-            let val = noise3d(x, y, z);
+            let val = fractal3d(x, y, z, octaves);
             //console.log(val);
             if (val <= thresh) {
                 return 1;
@@ -348,13 +348,9 @@ class NormalMesh {
                     inside(dx0, dy1, dz0), inside(dx0, dy1, dz1),
                     inside(dx1, dy0, dz0), inside(dx1, dy0, dz1),
                     inside(dx1, dy1, dz0), inside(dx1, dy1, dz1)]);
-
-                    //console.log(cellData);
                 }
             }
         }
-
-        //console.log(cellData);
 
         // from https://gist.github.com/dwilliamson/72c60fcd287a94867b4334b42a7888ad
         const TriangleTable = [
@@ -694,9 +690,6 @@ class NormalMesh {
                 }
             }
         }
-
-        //console.log(verts);
-        //console.log(indis);
 
         return new NormalMesh( gl, program, verts, indis, material, true );
 

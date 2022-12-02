@@ -643,7 +643,8 @@ class NormalMesh {
         ];
 
         let index = 0;
-        let vertSize, norm, px, py, pz, cx, cy, i;
+        let vertSize, norm, px, py, pz, cx, cy, i, t;
+        let point = [];
 
         for (let x = 0; x < subdivs; x++) {
             cx = x * subdivs * subdivs;
@@ -660,15 +661,17 @@ class NormalMesh {
                         index += Math.pow(2, j) * cellData[i][7-j];
                     }
 
-                    //console.log(cellData[i]);
-                    //console.log(TriangleTable[index]);
-                    for (let j = 0; j < (TriangleTable[index].length-1)/3; j++) {
-                        vertSize = verts.length/(VERTEX_STRIDE/4);
+                    vertSize = verts.length/(VERTEX_STRIDE/4);
+                    for (let j = 0; j < (TriangleTable[index].length-1); j++) {
+                        t = TriangleTable[index][j];
 
-                        for (let k = 0; k < 3; k++) {
-                            px = pointTable[TriangleTable[index][3*j+k]].x + 2*dx0;
-                            py = pointTable[TriangleTable[index][3*j+k]].y + 2*dy0;
-                            pz = pointTable[TriangleTable[index][3*j+k]].z + 2*dz0;
+                        if (point.includes(t)) {
+                            indis.push(vertSize + point.indexOf(t));
+                        } else {
+
+                            px = pointTable[t].x + 2*dx0;
+                            py = pointTable[t].y + 2*dy0;
+                            pz = pointTable[t].z + 2*dz0;
 
                             // coords
                             verts.push(px, py, pz);
@@ -679,10 +682,14 @@ class NormalMesh {
                             // norms
                             norm = normalVec(px, py, pz);
                             verts.push(norm.x, norm.y, norm.z);
-                        }
 
-                        indis.push(vertSize, vertSize+1, vertSize+2);
+                            indis.push(vertSize + j - (j-point.length));
+
+                            point.push(t);
+                        }
                     }
+
+                    point = [];
                     index = 0;
                 }
             }

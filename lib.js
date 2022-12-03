@@ -263,64 +263,58 @@ function set_uniform_int( gl, program, name, data ) {
     // gl.useProgram( old_prog );
 }
 
-// code from "https://codepen.io/_bm/pen/EXEPpO"
-
-//Parameters
-//let octaves = 2;
-let seed = 30;
+// code based off of "https://codepen.io/_bm/pen/EXEPpO"
 
 //Returns fractional component
 function fract(i) {
-  return i - Math.floor(i);
+    return i - Math.floor(i);
 }
 
 //Linear interpolation
 function lerp(v0, v1, t) {
-  return (1 - t) * v0 + t * v1;
+    return (1 - t) * v0 + t * v1;
 }
 
 function hash3d(x, y, z) {
-  x = 50 * fract(x * 0.3183099 + 0.71);
-  y = 50 * fract(y * 0.3183099 + 0.113);
-  z = 50 * fract(z * 0.3183099 + 0.33);
-  return -1 + 2 * fract(1.375986 * seed + x * y * z * (x + y + z));
+    x = 50 * fract(x * 0.3183099 + 0.71);
+    y = 50 * fract(y * 0.3183099 + 0.113);
+    z = 50 * fract(z * 0.3183099 + 0.33);
+    return -1 + 2 * fract(1.375986 * seed + x * y * z * (x + y + z));
 }
 
 function noise3d(x, y, z) {
-  let ix = Math.floor(x);
-  let iy = Math.floor(y);
-  let iz = Math.floor(z);
-  let fx = fract(x);
-  let fy = fract(y);
-  let fz = fract(z);
-  let ux = fx * fx * (3 - 2 * fx);
-  let uy = fy * fy * (3 - 2 * fy);
-  let uz = fz * fz * (3 - 2 * fz);
-  return lerp(
-    lerp(
-      lerp(hash3d(ix + 0, iy + 0, iz + 0), hash3d(ix + 1, iy + 0, iz + 0), ux),
-      lerp(hash3d(ix + 0, iy + 1, iz + 0), hash3d(ix + 1, iy + 1, iz + 0), ux),
-      uy
-    ),
-    lerp(
-      lerp(hash3d(ix + 0, iy + 0, iz + 1), hash3d(ix + 1, iy + 0, iz + 1), ux),
-      lerp(hash3d(ix + 0, iy + 1, iz + 1), hash3d(ix + 1, iy + 1, iz + 1), ux),
-      uy
-    ),
-    uz
-  );
+    let ix = Math.floor(x);
+    let iy = Math.floor(y);
+    let iz = Math.floor(z);
+    let fx = fract(x);
+    let fy = fract(y);
+    let fz = fract(z);
+    let ux = fx * fx * (3 - 2 * fx);
+    let uy = fy * fy * (3 - 2 * fy);
+    let uz = fz * fz * (3 - 2 * fz);
+    return lerp(
+        lerp(
+            lerp(hash3d(ix + 0, iy + 0, iz + 0), hash3d(ix + 1, iy + 0, iz + 0), ux),
+            lerp(hash3d(ix + 0, iy + 1, iz + 0), hash3d(ix + 1, iy + 1, iz + 0), ux),
+        uy),
+        lerp(
+            lerp(hash3d(ix + 0, iy + 0, iz + 1), hash3d(ix + 1, iy + 0, iz + 1), ux),
+            lerp(hash3d(ix + 0, iy + 1, iz + 1), hash3d(ix + 1, iy + 1, iz + 1), ux),
+        uy),
+        uz
+    );
 }
 
 function fractal3d(x, y, z, octaves) {
-  var val = 0;
-  for (let i = 0; i < octaves; i++) {
-    val += noise3d(x, y, z) / Math.pow(2, 0.5 + i - 0.5 * i);
-    x -= i * 7;
-    y += i * 13;
-    z -= i * 23;
-    x *= 1.4;
-    y *= 1.4;
-    z *= 1.4;
-  }
-  return val;
+    var val = 0;
+    for (let i = 0; i < octaves; i++) {
+        val += noise3d(x, y, z) / Math.pow(2, 0.5 + i - 0.5 * i);
+        x -= i * 7;
+        y += i * 13;
+        z -= i * 23;
+        x *= 1.4;
+        y *= 1.4;
+        z *= 1.4;
+    }
+    return val;
 }

@@ -307,16 +307,16 @@ class NormalMesh {
     static marchingCubes( gl, program, subdivs, thresh, octaves, material ) {
 
         function inside(x, y, z) {
-            //let val = y;
-            //let val = x + y + z;
-            //let val = (x-1)*(x-1) + (y-1)*(y-1) + (z-1)*(z-1);
-            //let val = Math.sin(x*y + x*z + y*z) + Math.sin(x*y) + Math.sin(y*z) + Math.sin(x*z) - 1;
-            let val = fractal3d(x, y, z, octaves);
-            //console.log(val);
-            if (val <= thresh) {
+            // strarting sphere:
+            if ((x-0.5)*(x-0.5) + (y-0.5)*(y-0.5) + (z-0.5)*(z-0.5) <= 0.05) {
                 return 1;
             } else {
-                return 0;
+                let val = fractal3d(x, y, z, octaves);
+                if (val <= thresh) {
+                    return 1;
+                } else {
+                    return 0;
+                }
             }
         }
 
@@ -614,12 +614,13 @@ class NormalMesh {
 
 //        +-----6-------+
 //      / |            /|
-//  11   7         10   5
+//   11   7        10   5
 //  +-----+2------+     |
 //  |     +-----4-+-----+
 //  3   8         1   9
 //  | /           | /
 //  +------0------+
+// (except it's flipped)
 
         let dist = 1.0/subdivs;
 
@@ -692,6 +693,5 @@ class NormalMesh {
         }
 
         return new NormalMesh( gl, program, verts, indis, material, true );
-
     }
 }

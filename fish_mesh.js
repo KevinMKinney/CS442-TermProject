@@ -67,7 +67,7 @@ class FishMesh {
         bind_texture_samplers( gl, this.program, "tex_0" );
 
         gl.activeTexture( gl.TEXTURE0 );
-        this.material.bind( gl );
+        this.material.bind( gl, this.program );
 
         gl.drawElements( gl.TRIANGLES, this.n_indis, gl.UNSIGNED_SHORT, 0 );
     }

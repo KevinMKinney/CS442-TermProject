@@ -147,7 +147,7 @@
                         normal_tx, light1_dir, eye_dir, light1_color, mat_specular, mat_shininess );
                     vec4 color_from_light1 = vec4(
                             ( light1_diffuse_color + light1_spec_color ) * light1_atten, 1.0 );
-                    
+
                     vec3 vector_to_light2 = light2_loc - coords_tx;
                     vec3 light2_dir = normalize( vector_to_light2 );
                     float light2_atten = attenuation( vector_to_light2 );
@@ -159,7 +159,7 @@
                     vec4 color_from_light2 = vec4(
                             ( light2_diffuse_color + light2_spec_color ) * light2_atten, 1.0 );
 
-                    
+
                     vec3 vector_to_light3 = light3_loc - coords_tx;
                     vec3 light3_dir = normalize( vector_to_light3 );
                     float light3_atten = attenuation( vector_to_light3 );
@@ -178,7 +178,7 @@
                             ambient_color +
                             color_from_sun +
                             color_from_light1 +
-                            color_from_light2 + 
+                            color_from_light2 +
                             color_from_light3
                         ) );
                     v_uv = uv;
@@ -231,7 +231,7 @@
             let keys = Keys.start_listening();
             let cam = new Camera();
             cam.translate( MESH_SIZE, MESH_SIZE, MESH_SIZE );
- 
+
             let rock =
                 new LitMaterial( gl, 'tex/water_rock.png', gl.LINEAR, 0.25, 1, 2, 4 );
 
@@ -273,10 +273,10 @@
             let fish9_node = orbiting_fish_builder(fish_scale, 0.8, 0.1, null);
             let fish10_node = orbiting_fish_builder(fish_scale, 0.9, -0.5, null);
 
-            FishMesh.from_obj_file( 
+            FishMesh.from_obj_file(
                 gl,
-                 'mesh/small_fish.obj', 
-                lit_program, 
+                 'mesh/small_fish.obj',
+                lit_program,
                 function( loaded_mesh ) {
                     fish1_node.data = loaded_mesh;
                     fish2_node.data = loaded_mesh;
@@ -288,9 +288,9 @@
                     fish8_node.data = loaded_mesh;
                     fish9_node.data = loaded_mesh;
                     fish10_node.data = loaded_mesh;
-                    
-                    fish_orbit_node.addChildrenNodes([fish1_node, fish2_node, fish3_node, 
-                                                      fish4_node, fish5_node, fish6_node, 
+
+                    fish_orbit_node.addChildrenNodes([fish1_node, fish2_node, fish3_node,
+                                                      fish4_node, fish5_node, fish6_node,
                                                       fish7_node, fish8_node, fish9_node,
                                                       fish10_node]);
                 },
@@ -305,12 +305,17 @@
                 // NormalMesh.box( gl, lit_program, 1, 1, 1, metal );
                 NormalMesh.marchingCubes(gl, lit_program, 40, 0.5, 12, rock);
 
+            function randomizeMesh() {
+                seed = Math.random();
+                mesh = NormalMesh.marchingCubes(gl, lit_program, 40, 0.5, 12, rock);
+            }
+
             let projection = Mat4.perspective_fovx( 0.125, 4 / 3, 0.125, 1024 );
             let current_program = lit_program;
 
             function render( now ) {
                 requestAnimationFrame( render );
-                let time_delta = ( now - last_update ) / 1000;    
+                let time_delta = ( now - last_update ) / 1000;
                 last_update = now;
 
                 // fish orbit calculations
@@ -358,16 +363,16 @@
                         set_uniform_vec3( gl, current_program, 'sun_color', light.color[0], light.color[1], light.color[2] );
                     }
                     else {
-                        set_uniform_vec3( 
-                            gl, current_program, 
-                            'light' + light.num + '_loc', 
+                        set_uniform_vec3(
+                            gl, current_program,
+                            'light' + light.num + '_loc',
                             light.loc.x, light.loc.y, light.loc.z
                         );
 
-                        set_uniform_vec3( 
-                            gl, current_program, 
-                            'light' + light.num + '_color', 
-                            light.color[0], light.color[1], light.color[2] 
+                        set_uniform_vec3(
+                            gl, current_program,
+                            'light' + light.num + '_color',
+                            light.color[0], light.color[1], light.color[2]
                         );
                     }
                 }
@@ -413,4 +418,5 @@
             setInterval( update, DESIRED_MSPT );
         </script>
     </body>
+    <button onclick="randomizeMesh()">Randomize!</button>
 </html>

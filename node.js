@@ -31,11 +31,15 @@ class Node {
     }
 }
 
-function orbiting_fish_builder(scale, orbit_turns, orbit_height, data) {
+function orbiting_fish_builder(scale, orbit_turns, orbit_height, data, baby=false) {
     let fish_node = new Node(data);
     fish_node.scale = new Vec4(scale, scale, scale, 1);
     fish_node.yaw = -orbit_turns;
-    fish_node.position = new Vec4(Math.cos(orbit_turns * 2 * Math.PI), orbit_height, Math.sin(orbit_turns * 2 * Math.PI), 1);
+    if (!baby) {
+        fish_node.position = new Vec4(Math.cos(orbit_turns * 2 * Math.PI), orbit_height, Math.sin(orbit_turns * 2 * Math.PI), 1);
+    } else {
+        fish_node.position = new Vec4(orbit_height, 0, 0, 1);
+    }
 
     return fish_node;
 }

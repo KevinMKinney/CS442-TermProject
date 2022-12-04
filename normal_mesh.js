@@ -640,7 +640,7 @@ class NormalMesh {
         ];
 
         let index = 0;
-        let vertSize, norm, px, py, pz, cx, cy, i, t;
+        let vertSize, triangleSize, norm, px, py, pz, cx, cy, i, t;
         let point = [];
 
         for (let x = 0; x < subdivs; x++) {
@@ -659,7 +659,8 @@ class NormalMesh {
                     }
 
                     vertSize = verts.length/(VERTEX_STRIDE/4);
-                    for (let j = 0; j < (TriangleTable[index].length-1); j++) {
+                    triangleSize = TriangleTable[index].length - 1;
+                    for (let j = 0; j < triangleSize; j++) {
                         t = TriangleTable[index][j];
 
                         if (point.includes(t)) {
@@ -675,7 +676,7 @@ class NormalMesh {
                             // colors
                             verts.push(0.2, 1.0, 0.2, 1.0);
                             // uvs
-                            verts.push(0.0, 0.0);
+                            verts.push(0, y/(subdivs-1));
                             // norms
                             norm = normalVec(px, py, pz);
                             verts.push(norm.x, norm.y, norm.z);

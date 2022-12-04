@@ -221,40 +221,22 @@
             const FISH_ORBIT_SPEED = 0.05;
             let fish_orbit_amnt = 0.0;
             let fish_orbit_radius = 1;
-            let fish_scale = new Vec4(0.05, 0.05, 0.05, 1);
+            let fish_scale = 0.05;
 
             let fish_orbit_node = new Node(null);
-            let fish1_node = new Node(null);
-            let fish2_node = new Node(null);
-            let fish3_node = new Node(null);
-            let fish4_node = new Node(null);
-
             fish_orbit_node.position = new Vec4(MESH_SIZE, MESH_SIZE, MESH_SIZE, 1);
 
-            fish1_node.scale = fish_scale;
-            let fish1_orbit_turns = 0;
-            let fish1_orbit_rads = fish1_orbit_turns * 2 * Math.PI;
-            fish1_node.yaw = -fish1_orbit_turns;
-            fish1_node.position = new Vec4(Math.cos(fish1_orbit_rads), 0.03, Math.sin(fish1_orbit_rads), 1);
+            let fish1_node = orbiting_fish_builder(fish_scale, 0, 0.1, null);
+            let fish2_node = orbiting_fish_builder(fish_scale, 0.1, -0.1, null);
+            let fish3_node = orbiting_fish_builder(fish_scale, 0.2, 0.3, null);
+            let fish4_node = orbiting_fish_builder(fish_scale, 0.3, -0.2, null);
+            let fish5_node = orbiting_fish_builder(fish_scale, 0.4, 0.4, null);
+            let fish6_node = orbiting_fish_builder(fish_scale, 0.5, 0.3, null);
+            let fish7_node = orbiting_fish_builder(fish_scale, 0.6, -0.5, null);
+            let fish8_node = orbiting_fish_builder(fish_scale, 0.7, -0.3, null);
+            let fish9_node = orbiting_fish_builder(fish_scale, 0.8, 0.1, null);
+            let fish10_node = orbiting_fish_builder(fish_scale, 0.9, -0.5, null);
 
-            fish2_node.scale = fish_scale;
-            let fish2_orbit_turns = 0.25;
-            let fish2_orbit_rads = fish2_orbit_turns * 2 * Math.PI;
-            fish2_node.yaw = -fish2_orbit_turns;
-            fish2_node.position = new Vec4(Math.cos(fish2_orbit_rads), -.01, Math.sin(fish2_orbit_rads), 1);
-
-            fish3_node.scale = fish_scale;
-            let fish3_orbit_turns = 0.5;
-            let fish3_orbit_rads = fish3_orbit_turns * 2 * Math.PI;
-            fish3_node.yaw = -fish3_orbit_turns;
-            fish3_node.position = new Vec4(Math.cos(fish3_orbit_rads), 0.02, Math.sin(fish3_orbit_rads), 1);
-
-            fish4_node.scale = fish_scale;
-            let fish4_orbit_turns = 0.75;
-            let fish4_orbit_rads = fish4_orbit_turns * 2 * Math.PI;
-            fish4_node.yaw = -fish4_orbit_turns;
-            fish4_node.position = new Vec4(Math.cos(fish4_orbit_rads), -0.3, Math.sin(fish4_orbit_rads), 1);
-            
             FishMesh.from_obj_file( 
                 gl,
                  'mesh/small_fish.obj', 
@@ -264,7 +246,23 @@
                     fish2_node.data = loaded_mesh;
                     fish3_node.data = loaded_mesh;
                     fish4_node.data = loaded_mesh;
-                    fish_orbit_node.addChildrenNodes([fish1_node, fish2_node, fish3_node, fish4_node]);
+                    fish5_node.data = loaded_mesh;
+                    fish6_node.data = loaded_mesh;
+                    fish7_node.data = loaded_mesh;
+                    fish8_node.data = loaded_mesh;
+                    fish9_node.data = loaded_mesh;
+                    fish10_node.data = loaded_mesh;
+                    
+                    fish_orbit_node.addChildrenNodes([fish1_node, 
+                                                      fish2_node, 
+                                                      fish3_node, 
+                                                      fish4_node, 
+                                                      fish5_node, 
+                                                      fish6_node, 
+                                                      fish7_node, 
+                                                      fish8_node,
+                                                      fish9_node,
+                                                      fish10_node]);
                 },
                 fish_texture
             );

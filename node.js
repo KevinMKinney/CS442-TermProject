@@ -30,3 +30,12 @@ class Node {
         return matrix;
     }
 }
+
+function orbiting_fish_builder(scale, orbit_turns, orbit_height, data) {
+    let fish_node = new Node(data);
+    fish_node.scale = new Vec4(scale, scale, scale, 1);
+    fish_node.yaw = -orbit_turns;
+    fish_node.position = new Vec4(Math.cos(orbit_turns * 2 * Math.PI), orbit_height, Math.sin(orbit_turns * 2 * Math.PI), 1);
+
+    return fish_node;
+}

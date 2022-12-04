@@ -11,7 +11,7 @@ class NormalMesh {
      * @param {number[]} vertices
      * @param {number[]} indices
     */
-    constructor( gl, program, vertices, indices, material, use_color ) {
+    constructor( gl, program, vertices, indices, material, use_color) {
         this.verts = create_and_load_vertex_buffer( gl, vertices, gl.STATIC_DRAW );
         this.indis = create_and_load_elements_buffer( gl, indices, gl.STATIC_DRAW );
 
@@ -133,7 +133,7 @@ class NormalMesh {
      * Load a mesh from a heightmap.
      * @param {WebGLRenderingContext} gl
      * @param {WebGLProgram} program
-     * @param {number][][]} map
+     * @param {number[][]} map
      * @param {number} min
      * @param {number} max
      */
@@ -301,7 +301,7 @@ class NormalMesh {
             }
         }
 
-        return new NormalMesh( gl, program, verts, indis, material, false );
+        return new NormalMesh( gl, program, verts, indis, material, true );
     }
 
     static marchingCubes( gl, program, subdivs, thresh, octaves, material ) {

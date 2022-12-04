@@ -255,6 +255,9 @@
             let fish_orbit_radius = 1;
             let fish_scale = 0.05;
 
+            let baby_fish_orbit_radius = 4;
+            let baby_fish_scale = 0.5;
+
             let fish_orbit_node = new Node(null);
             fish_orbit_node.position = new Vec4(MESH_SIZE, MESH_SIZE, MESH_SIZE, 1);
 
@@ -267,11 +270,26 @@
             let fish3_node = orbiting_fish_builder(fish_scale, 0.2, 0.3, null);
             let fish4_node = orbiting_fish_builder(fish_scale, 0.3, -0.2, null);
             let fish5_node = orbiting_fish_builder(fish_scale, 0.4, 0.4, null);
-            let fish6_node = orbiting_fish_builder(fish_scale, 0.5, 0.3, null);
+            let fish6_node = orbiting_fish_builder(fish_scale, 0.5, 0.1, null);
             let fish7_node = orbiting_fish_builder(fish_scale, 0.6, -0.5, null);
             let fish8_node = orbiting_fish_builder(fish_scale, 0.7, -0.3, null);
             let fish9_node = orbiting_fish_builder(fish_scale, 0.8, 0.1, null);
             let fish10_node = orbiting_fish_builder(fish_scale, 0.9, -0.5, null);
+
+            let baby_fish_orbit_node1 = new Node(null);
+            let baby_fish_node1 = orbiting_fish_builder(baby_fish_scale, 0, baby_fish_orbit_radius, null, baby=true)
+            fish10_node.addChildrenNodes([baby_fish_orbit_node1]);
+            baby_fish_orbit_node1.addChildrenNodes([baby_fish_node1]);
+
+            let baby_fish_orbit_node2 = new Node(null);
+            let baby_fish_node2 = orbiting_fish_builder(baby_fish_scale, 0, baby_fish_orbit_radius, null, baby=true)
+            fish6_node.addChildrenNodes([baby_fish_orbit_node2]);
+            baby_fish_orbit_node2.addChildrenNodes([baby_fish_node2]);
+
+            let baby_fish_orbit_node3 = new Node(null);
+            let baby_fish_node3 = orbiting_fish_builder(baby_fish_scale, 0, baby_fish_orbit_radius, null, baby=true)
+            fish3_node.addChildrenNodes([baby_fish_orbit_node3]);
+            baby_fish_orbit_node3.addChildrenNodes([baby_fish_node3]);
 
             FishMesh.from_obj_file( 
                 gl,
@@ -288,6 +306,10 @@
                     fish8_node.data = loaded_mesh;
                     fish9_node.data = loaded_mesh;
                     fish10_node.data = loaded_mesh;
+
+                    baby_fish_node1.data = loaded_mesh;
+                    baby_fish_node2.data = loaded_mesh;
+                    baby_fish_node3.data = loaded_mesh;
                     
                     fish_orbit_node.addChildrenNodes([fish1_node, fish2_node, fish3_node, 
                                                       fish4_node, fish5_node, fish6_node, 
@@ -317,6 +339,8 @@
                 fish_orbit_amnt -= FISH_ORBIT_SPEED * time_delta;
                 fish_orbit_amnt %= 1.0;
                 fish_orbit_node.yaw = fish_orbit_amnt;
+                baby_fish_orbit_node1.roll = baby_fish_orbit_node2.roll = baby_fish_orbit_node3.roll = 2 * fish_orbit_amnt;
+                baby_fish_node1.roll = baby_fish_node2.roll = baby_fish_node3.roll = -2 * fish_orbit_amnt;
 
                 // fish light calculations
                 fish_light1_node.position.y = Math.cos(fish_orbit_amnt * 2 * Math.PI);

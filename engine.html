@@ -21,9 +21,12 @@
     <body>
         <canvas id = "the-canvas" width = "800" height = "600"></canvas>
         <script src = "lib.js"></script>
+        <script src = "node.js"></script>
+        <script src = "render.js"></script>
         <script src = "vector.js"></script>
         <script src = "matrix.js"></script>
         <script src = "normal_mesh.js"></script>
+        <script src = "fish_mesh.js"></script>
         <script src = "controls.js"></script>
         <script src = "cam.js"></script>
         <script src = "lit_material.js"></script>
@@ -49,6 +52,12 @@
 
                 uniform vec3 light1_loc;
                 uniform vec3 light1_color;
+
+                uniform vec3 light2_loc;
+                uniform vec3 light2_color;
+
+                uniform vec3 light3_loc;
+                uniform vec3 light3_color;
 
                 const float light_attenuation_k = 0.01;
                 const float light_attenuation_l = 0.1;
@@ -101,14 +110,14 @@
                 }
 
                 float attenuation( vec3 vector_to_light ) {
-                    float light1_dist = length( vector_to_light );
-                    float light1_atten = 1.0 / (
+                    float light_dist = length( vector_to_light );
+                    float light_atten = 1.0 / (
                         light_attenuation_k +
-                        light_attenuation_l * light1_dist +
-                        light_attenuation_q * light1_dist * light1_dist
+                        light_attenuation_l * light_dist +
+                        light_attenuation_q * light_dist * light_dist
                     );
 
-                    return light1_atten;
+                    return light_atten;
                 }
 
                 void main( void ) {
@@ -120,7 +129,6 @@
 
                     vec4 ambient_color = vec4( mat_ambient, mat_ambient, mat_ambient, 1.0 );
 
-                    // vec3 sun_dir_tx =
                     float cos_sun_dir_surf_normal = dot( sun_dir, normal_tx );
                     vec3 sun_diffuse_color = diff_color( normal_tx, sun_dir, sun_color, mat_diffuse );
 
@@ -139,7 +147,29 @@
                         normal_tx, light1_dir, eye_dir, light1_color, mat_specular, mat_shininess );
                     vec4 color_from_light1 = vec4(
                             ( light1_diffuse_color + light1_spec_color ) * light1_atten, 1.0 );
+                    
+                    vec3 vector_to_light2 = light2_loc - coords_tx;
+                    vec3 light2_dir = normalize( vector_to_light2 );
+                    float light2_atten = attenuation( vector_to_light2 );
 
+                    vec3 light2_diffuse_color = diff_color(
+                        normal_tx, light2_dir, light2_color, mat_diffuse);
+                    vec3 light2_spec_color = spec_color(
+                        normal_tx, light2_dir, eye_dir, light2_color, mat_specular, mat_shininess );
+                    vec4 color_from_light2 = vec4(
+                            ( light2_diffuse_color + light2_spec_color ) * light2_atten, 1.0 );
+
+                    
+                    vec3 vector_to_light3 = light3_loc - coords_tx;
+                    vec3 light3_dir = normalize( vector_to_light3 );
+                    float light3_atten = attenuation( vector_to_light3 );
+
+                    vec3 light3_diffuse_color = diff_color(
+                        normal_tx, light3_dir, light3_color, mat_diffuse);
+                    vec3 light3_spec_color = spec_color(
+                        normal_tx, light3_dir, eye_dir, light3_color, mat_specular, mat_shininess );
+                    vec4 color_from_light3 = vec4(
+                            ( light3_diffuse_color + light3_spec_color ) * light3_atten, 1.0 );
                     /* multiply color by 0 to remove it. try changing the 0 to a small number like .2
                     and the 1 to the complement of that number (1 - .2 = .8) to see how color blending works.*/
                     v_color =
@@ -147,7 +177,9 @@
                         ( 1.0 * (
                             ambient_color +
                             color_from_sun +
-                            color_from_light1
+                            color_from_light1 +
+                            color_from_light2 + 
+                            color_from_light3
                         ) );
                     v_uv = uv;
                 }
@@ -188,7 +220,7 @@
             const DESIRED_TICK_RATE = 60;
             const DESIRED_MSPT = 1000.0 / DESIRED_TICK_RATE;
 
-            const ROTATION_SPEED = 0.14; // eighth turn per second
+            const ROTATION_SPEED = 0.125;
             const ROTATION_SPEED_PER_FRAME = ROTATION_SPEED / DESIRED_TICK_RATE;
 
             const FLY_SPEED = 1.5;    // units per second
@@ -199,17 +231,75 @@
             let keys = Keys.start_listening();
             let cam = new Camera();
             cam.translate( MESH_SIZE, MESH_SIZE, MESH_SIZE );
-
+ 
             let rock =
                 new LitMaterial( gl, 'tex/water_rock.png', gl.LINEAR, 0.25, 1, 2, 4 );
 
             let sun_dir = ( new Vec4( 1.0, 0.0, 0.0, 0.0 ) ).norm();
             let sun = new Light( sun_dir.x, sun_dir.y, sun_dir.z, 1.0, 0.95, 0.85, 0 );
             let light1 = new Light( -9, -9, 0.0, 1.0, 0.2, 0.2, 1 );
+            let light2 = new Light( 0, 0, 0.0, 0.0, 0.0, 0.4, 2 );
+            let light3 = new Light( 0, 0, 0.0, 0.0, 0.4, 0.0, 3 );
 
             // seed must be defined before marchingCubes mesh
             // cool seed(s): 54
             let seed = 54;
+
+            // **********************************
+            // ** Fish Stuff
+
+            let fish_texture = new LitMaterial( gl, 'tex/fish_flipped.png', gl.LINEAR, 0.2, 0.8, 0.05, 1.0 );
+
+            const FISH_ORBIT_SPEED = 0.05;
+            let fish_orbit_amnt = 0.0;
+            let fish_orbit_radius = 1;
+            let fish_scale = 0.05;
+
+            let fish_orbit_node = new Node(null);
+            fish_orbit_node.position = new Vec4(MESH_SIZE, MESH_SIZE, MESH_SIZE, 1);
+
+            let fish_light1_node = new Node(light2);
+            let fish_light2_node = new Node(light3);
+            fish_orbit_node.addChildrenNodes([fish_light1_node, fish_light2_node]);
+
+            let fish1_node = orbiting_fish_builder(fish_scale, 0, 0.1, null);
+            let fish2_node = orbiting_fish_builder(fish_scale, 0.1, -0.1, null);
+            let fish3_node = orbiting_fish_builder(fish_scale, 0.2, 0.3, null);
+            let fish4_node = orbiting_fish_builder(fish_scale, 0.3, -0.2, null);
+            let fish5_node = orbiting_fish_builder(fish_scale, 0.4, 0.4, null);
+            let fish6_node = orbiting_fish_builder(fish_scale, 0.5, 0.3, null);
+            let fish7_node = orbiting_fish_builder(fish_scale, 0.6, -0.5, null);
+            let fish8_node = orbiting_fish_builder(fish_scale, 0.7, -0.3, null);
+            let fish9_node = orbiting_fish_builder(fish_scale, 0.8, 0.1, null);
+            let fish10_node = orbiting_fish_builder(fish_scale, 0.9, -0.5, null);
+
+            FishMesh.from_obj_file( 
+                gl,
+                 'mesh/small_fish.obj', 
+                lit_program, 
+                function( loaded_mesh ) {
+                    fish1_node.data = loaded_mesh;
+                    fish2_node.data = loaded_mesh;
+                    fish3_node.data = loaded_mesh;
+                    fish4_node.data = loaded_mesh;
+                    fish5_node.data = loaded_mesh;
+                    fish6_node.data = loaded_mesh;
+                    fish7_node.data = loaded_mesh;
+                    fish8_node.data = loaded_mesh;
+                    fish9_node.data = loaded_mesh;
+                    fish10_node.data = loaded_mesh;
+                    
+                    fish_orbit_node.addChildrenNodes([fish1_node, fish2_node, fish3_node, 
+                                                      fish4_node, fish5_node, fish6_node, 
+                                                      fish7_node, fish8_node, fish9_node,
+                                                      fish10_node]);
+                },
+                fish_texture
+            );
+
+            // ** End Fish Stuff
+            // ********************************
+
             let mesh =
                 //NormalMesh.uv_sphere( gl, lit_program, 1, 16, scale );
                 // NormalMesh.box( gl, lit_program, 1, 1, 1, metal );
@@ -219,19 +309,27 @@
             let current_program = lit_program;
 
             function render( now ) {
+                requestAnimationFrame( render );
+                let time_delta = ( now - last_update ) / 1000;    
                 last_update = now;
 
-                requestAnimationFrame( render );
+                // fish orbit calculations
+                fish_orbit_amnt -= FISH_ORBIT_SPEED * time_delta;
+                fish_orbit_amnt %= 1.0;
+                fish_orbit_node.yaw = fish_orbit_amnt;
+
+                // fish light calculations
+                fish_light1_node.position.y = Math.cos(fish_orbit_amnt * 2 * Math.PI);
+                fish_light2_node.position.y = -Math.cos(fish_orbit_amnt * 2 * Math.PI);
 
                 gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
                 // we're using world-space lighting, so it's okay to combine projection
                 // and model-view like this.
+
                 let model = Mat4.translation( 0, 0, 0 );
                 model = model.mul(Mat4.scale(MESH_SIZE, MESH_SIZE, MESH_SIZE));
-                // model = model.mul( projection );
                 let view = cam.get_view_matrix();
-                // model = model.mul( cam.get_view_matrix() );
                 let modelview = view.mul( model );
 
                 set_uniform_matrix4( gl, current_program, 'projection', projection.data );
@@ -240,14 +338,46 @@
                 set_uniform_matrix4( gl, current_program, 'view', view.data );
 
                 // transform viewer coordinates
-                // let viewer_loc = cam.get_transformed_coordinates();
                 set_uniform_vec3( gl, current_program, 'viewer_loc', cam.x, cam.y, cam.z );
 
                 // bind lights
                 sun.bind( gl, current_program, modelview );
                 light1.bind( gl, current_program, modelview );
 
+                // render the marching cubes
                 mesh.render( gl );
+
+                // render the rest of the scene...
+                jobs = [];
+                lights = [];
+                generate_render_jobs(Mat4.identity(), fish_orbit_node, jobs, lights)
+
+                for (let light of lights) {
+                    if( light.num == 0 ) { // this is the sun
+                        set_uniform_vec3( gl, current_program, 'sun_dir', light.loc.x, light.loc.y, light.loc.z );
+                        set_uniform_vec3( gl, current_program, 'sun_color', light.color[0], light.color[1], light.color[2] );
+                    }
+                    else {
+                        set_uniform_vec3( 
+                            gl, current_program, 
+                            'light' + light.num + '_loc', 
+                            light.loc.x, light.loc.y, light.loc.z
+                        );
+
+                        set_uniform_vec3( 
+                            gl, current_program, 
+                            'light' + light.num + '_color', 
+                            light.color[0], light.color[1], light.color[2] 
+                        );
+                    }
+                }
+
+                for (let job of jobs) {
+                    let job_modelview = view.mul(job.matrix);
+                    set_uniform_matrix4( gl, current_program, 'modelview', job_modelview.data );
+                    set_uniform_matrix4( gl, current_program, 'model', job.matrix.data );
+                    job.mesh.render(gl);
+                }
             }
 
             const KEYMAP = {

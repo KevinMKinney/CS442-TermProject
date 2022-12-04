@@ -21,6 +21,8 @@
     <body>
         <canvas id = "the-canvas" width = "800" height = "600"></canvas>
         <script src = "lib.js"></script>
+        <script src = "node.js"></script>
+        <script src = "render.js"></script>
         <script src = "vector.js"></script>
         <script src = "matrix.js"></script>
         <script src = "normal_mesh.js"></script>
@@ -189,7 +191,7 @@
             const DESIRED_TICK_RATE = 60;
             const DESIRED_MSPT = 1000.0 / DESIRED_TICK_RATE;
 
-            const ROTATION_SPEED = 0.14; // eighth turn per second
+            const ROTATION_SPEED = 0.125;
             const ROTATION_SPEED_PER_FRAME = ROTATION_SPEED / DESIRED_TICK_RATE;
 
             const FLY_SPEED = 1.5;    // units per second
@@ -213,18 +215,38 @@
             let seed = 54;
             let mesh = NormalMesh.marchingCubes(gl, lit_program, 40, 0.5, 12, scale);
 
-            let fish_mesh1 = null;
-            let fish_mesh2 = null;
-            let fish_mesh3 = null;
+            // **********************************
+            // ** Fish Stuff
+
+            const FISH_ORBIT_SPEED = 0.05;
+            let fish_orbit_amnt = 0.0;
+
+
+            let fish_orbit_node = new Node(null);
+            let fish1_node = new Node(null);
+            let fish2_node = new Node(null);
+            let fish3_node = new Node(null);
+
+            fish_orbit_node.position = new Vec4(MESH_SIZE, MESH_SIZE, MESH_SIZE, 1);
+
+            fish1_node.scale = new Vec4(0.05, 0.05, 0.05, 1);
+            fish1_node.position = new Vec4(1, -0.1, 0, 1);
+
+            fish2_node.scale = new Vec4(0.05, 0.05, 0.05, 1);
+            fish2_node.position = new Vec4(1, 0.1, 0, 1);
+
+            fish3_node.scale = new Vec4(0.05, 0.05, 0.05, 1);
+            fish3_node.position = new Vec4(1, 0, 0.6, 1);
             
             FishMesh.from_obj_file( 
                 gl,
                  'mesh/small_fish.obj', 
                 lit_program, 
                 function( loaded_mesh ) {
-                    fish_mesh1 = loaded_mesh;
-                    fish_mesh2 = loaded_mesh;
-                    fish_mesh3 = loaded_mesh;
+                    fish1_node.data = loaded_mesh;
+                    fish2_node.data = loaded_mesh;
+                    fish3_node.data = loaded_mesh;
+                    fish_orbit_node.addChildrenNodes([fish1_node, fish2_node, fish3_node]);
                 },
                 fish_texture
             );
@@ -233,30 +255,24 @@
             let current_program = lit_program;
 
             function render( now ) {
+                requestAnimationFrame( render );
+                let time_delta = ( now - last_update ) / 1000;    
                 last_update = now;
 
-                requestAnimationFrame( render );
+                // fish orbit calculations
+                fish_orbit_amnt -= FISH_ORBIT_SPEED * time_delta;
+                fish_orbit_amnt %= 1.0;
+                fish_orbit_node.yaw = fish_orbit_amnt;
 
                 gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
                 // we're using world-space lighting, so it's okay to combine projection
                 // and model-view like this.
-                let fish_model1 = Mat4.translation( MESH_SIZE+ 0.2, MESH_SIZE + 0.2, MESH_SIZE + 0.2 );
-                let fish_model2 = Mat4.translation( MESH_SIZE, MESH_SIZE, MESH_SIZE );
-                let fish_model3 = Mat4.translation( MESH_SIZE, MESH_SIZE - 0.2, MESH_SIZE + 0.3 );
-                fish_model1 = fish_model1.mul(Mat4.scale(0.05, 0.05, 0.05));
-                fish_model2 = fish_model2.mul(Mat4.rotation_xz(0.125).mul(Mat4.scale(0.05, 0.05, 0.05)));
-                fish_model3 = fish_model3.mul(Mat4.rotation_xz(-0.125).mul(Mat4.scale(0.05, 0.05, 0.05)));
 
                 let model = Mat4.translation( 0, 0, 0 );
                 model = model.mul(Mat4.scale(MESH_SIZE, MESH_SIZE, MESH_SIZE));
-                // model = model.mul( projection );
                 let view = cam.get_view_matrix();
-                // model = model.mul( cam.get_view_matrix() );
                 let modelview = view.mul( model );
-                let fish_modelview1 = view.mul(fish_model1);
-                let fish_modelview2 = view.mul(fish_model2);
-                let fish_modelview3 = view.mul(fish_model3);
 
                 set_uniform_matrix4( gl, current_program, 'projection', projection.data );
                 set_uniform_matrix4( gl, current_program, 'modelview', modelview.data );
@@ -264,31 +280,24 @@
                 set_uniform_matrix4( gl, current_program, 'view', view.data );
 
                 // transform viewer coordinates
-                // let viewer_loc = cam.get_transformed_coordinates();
                 set_uniform_vec3( gl, current_program, 'viewer_loc', cam.x, cam.y, cam.z );
 
                 // bind lights
                 sun.bind( gl, current_program, modelview );
                 light1.bind( gl, current_program, modelview );
 
+                // render the marching cubes
                 mesh.render( gl );
 
-                if (fish_mesh1) {
-                    set_uniform_matrix4( gl, current_program, 'model', fish_model1.data );
-                    set_uniform_matrix4( gl, current_program, 'modelview', fish_modelview1.data );
-                    fish_mesh1.render( gl );  
-                }
+                // render the rest of the scene...
+                jobs = [];
+                generate_render_jobs(Mat4.identity(), fish_orbit_node, jobs)
 
-                if (fish_mesh2) {
-                    set_uniform_matrix4( gl, current_program, 'model', fish_model2.data );
-                    set_uniform_matrix4( gl, current_program, 'modelview', fish_modelview2.data );
-                    fish_mesh2.render( gl );  
-                }
-
-                if (fish_mesh3) {
-                    set_uniform_matrix4( gl, current_program, 'model', fish_model3.data );
-                    set_uniform_matrix4( gl, current_program, 'modelview', fish_modelview3.data );
-                    fish_mesh3.render( gl );  
+                for (let job of jobs) {
+                    let job_modelview = view.mul(job.matrix);
+                    set_uniform_matrix4( gl, current_program, 'modelview', job_modelview.data );
+                    set_uniform_matrix4( gl, current_program, 'model', job.matrix.data );
+                    job.mesh.render(gl);
                 }
             }
 
